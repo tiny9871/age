@@ -34,6 +34,8 @@ public class PointsSummaryController {
   public List<SelectOption> transferToList;
   public String transferFromSelection {get; set;}  
   public String transferToSelection {get; set;}    
+  
+  public Points_Bucket__c pointsBucket { get; set; }
  
   String transferredPointsRecordTypeId = Game_Settings__c.getInstance().Transferred_Points_RecordTypeId__c;
   String earnedPointsRecordTypeId = Game_Settings__c.getInstance().Earned_Points_RecordTypeId__c;
@@ -42,6 +44,8 @@ public class PointsSummaryController {
   public PointsSummaryController() { 
 
     proxyPoints = new Points__c();
+    
+    pointsBucket = new Points_Bucket__c();
 
     // URL parameter may specify a particular user for the "Appirian" lookup
     proxyPoints.User__c = ApexPages.CurrentPage().getParameters().get('userId');
@@ -179,6 +183,7 @@ public class PointsSummaryController {
       transferToList.add(new SelectOption('-2', '--------------------------'));
       transferToList.add(new SelectOption('new', 'Points Bucket - Create New'));
     }
+    transferToList.add(new SelectOption('anotherUser', 'To Another User'));
   }
   
   
@@ -302,6 +307,7 @@ public class PointsSummaryController {
   public class PointsSummaryException extends Exception {}
   
   public PageReference transferPoints() {
+      SavePoint savepoint = Database.setSavePoint();
   
     System.debug('transferring points');
     
@@ -390,6 +396,62 @@ public class PointsSummaryController {
           
           notesText += 'Shareable Points ' + justCreatedPB.Name;
           point.Target_Record_Id__c = justCreatedPB.Name;
+        } else if (transferToSelection == 'anotherUser') {
+            Points_Bucket__c[] lstTransferToBucket = [
+                SELECT Id, 
+                       Name,
+                       Current_Balance__c 
+                FROM   Points_Bucket__c 
+                WHERE  Owner__c = :pointsBucket.Owner__c
+                LIMIT 1];
+
+            User user = [SELECT Id, Name FROM User WHERE Id =: pointsBucket.Owner__c LIMIT 1];
+                                         
+            if(!lstTransferToBucket.isEmpty()) {
+                notesText += 'Points Bucket ' + lstTransferToBucket[0].Name;
+                point.Target_Record_Id__c = lstTransferToBucket[0].Name;
+
+                lstTransferToBucket[0].Title__c = user.Name + ' - Shareable Points';
+                lstTransferToBucket[0].Current_Balance__c = lstTransferToBucket[0].Current_Balance__c + transferAmount;
+                pointsBucketsToUpdate.add(lstTransferToBucket[0]);
+            } else {
+
+                Points_Bucket__c newPointsBucket = new Points_Bucket__c(
+                    Title__c = user.Name + ' - Shareable Points', 
+                    Current_Balance__c = transferAmount,
+                    Owner__c = pointsBucket.Owner__c);                                                            
+	          try{                                                        
+	            insert newPointsBucket;
+	          }catch (Exception e){
+	            insert new Log_Message__c(Message__c = e.getMessage(), Type__c = 'Points Summary Controller');  
+	          }
+	          
+	          Points_Bucket__c justCreatedPB = [SELECT Id, 
+	                                                   Name 
+	                                            FROM   Points_Bucket__c 
+	                                            WHERE  Title__c = :newPointsBucketName
+	                                            AND    Owner__c = :proxyPoints.User__c];
+	                                            
+	          
+	          List<Challenge__c> chatterChallenges = getChallengesForNewPointsBucket();
+	          
+	          List<Challenge_Points_Bucket__c> challengePointsBucketsList = new List<Challenge_Points_Bucket__c>();
+	          
+	          for(Challenge__c c : chatterChallenges) {
+	            
+	            Challenge_Points_Bucket__c cpb = new Challenge_Points_Bucket__c();
+	            cpb.Challenge__c = c.Id;
+	            cpb.Points_Bucket__c = justCreatedPB.Id;
+	            
+	            challengePointsBucketsList.add(cpb);
+	            
+	          }
+	          
+	          insert challengePointsBucketsList;
+	          
+	          notesText += 'Shareable Points ' + justCreatedPB.Name;
+	          point.Target_Record_Id__c = justCreatedPB.Name;
+            }
         }
         
         point.Notes__c = notesText;     
@@ -444,9 +506,64 @@ public class PointsSummaryController {
           system.debug('points object: ' + point);
         
           pointsToInsert.add(point);      
+        } else if (transferToSelection == 'anotherUser') {
+            Points_Bucket__c[] lstTransferToBucket = [
+                SELECT Id, 
+                       Name,
+                       Current_Balance__c 
+                FROM   Points_Bucket__c 
+                WHERE  Owner__c = :pointsBucket.Owner__c
+                LIMIT 1];
+
+            User user = [SELECT Id, Name FROM User WHERE Id =: pointsBucket.Owner__c LIMIT 1];
+                                         
+            if(!lstTransferToBucket.isEmpty()) {
+                point.Notes__c = 'Transferred from Points Bucket ' + transferFromSelection.subString(0,7) + lstTransferToBucket[0].Name;
+                point.Target_Record_Id__c = lstTransferToBucket[0].Name;
+
+                lstTransferToBucket[0].Title__c = user.Name + ' - Shareable Points';
+                lstTransferToBucket[0].Current_Balance__c = lstTransferToBucket[0].Current_Balance__c + transferAmount;
+                pointsBucketsToUpdate.add(lstTransferToBucket[0]);
+            } else {
+
+                Points_Bucket__c newPointsBucket = new Points_Bucket__c(
+                    Title__c = user.Name + ' - Shareable Points', 
+                    Current_Balance__c = transferAmount,
+                    Owner__c = pointsBucket.Owner__c);                                                            
+              try{                                                        
+                insert newPointsBucket;
+              }catch (Exception e){
+                insert new Log_Message__c(Message__c = e.getMessage(), Type__c = 'Points Summary Controller');  
+              }
+              
+              Points_Bucket__c justCreatedPB = [SELECT Id, 
+                                                       Name 
+                                                FROM   Points_Bucket__c 
+                                                WHERE  Title__c = :newPointsBucketName
+                                                AND    Owner__c = :proxyPoints.User__c];
+                                                
+              
+              List<Challenge__c> chatterChallenges = getChallengesForNewPointsBucket();
+              
+              List<Challenge_Points_Bucket__c> challengePointsBucketsList = new List<Challenge_Points_Bucket__c>();
+              
+              for(Challenge__c c : chatterChallenges) {
+                
+                Challenge_Points_Bucket__c cpb = new Challenge_Points_Bucket__c();
+                cpb.Challenge__c = c.Id;
+                cpb.Points_Bucket__c = justCreatedPB.Id;
+                
+                challengePointsBucketsList.add(cpb);
+                
+              }
+              
+              insert challengePointsBucketsList;
+              
+              point.Notes__c = 'Transferred from Points Bucket ' + transferFromSelection.subString(0,7) + justCreatedPB.Name;
+              point.Target_Record_Id__c = justCreatedPB.Name;
+            }
         }
-      } 
-      
+      }
       system.debug('points bucket to update: ' + pointsBucketsToUpdate); 
       System.debug('points bucket update list: ' + pointsBucketsToUpdate);
       System.debug('points to insert: ' + pointsToInsert);
@@ -470,6 +587,7 @@ public class PointsSummaryController {
       transferAmount = 0;
     
     } catch (Exception e) {
+      Database.rollback(savepoint);
       ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, e.getMessage()));    
     }
   
