@@ -9,6 +9,7 @@ public class PointsSummaryController {
 // 2013-10-18     Glenn Weinstein     Add Badge Summary
 // 2013-10-24     Glenn Weinstein     Add "Entered in Company Store" field on Points
 // 2014-07-20     Kym Le                  Added changes for transferring points
+// 2014-08-22     Tiny B              Added functionality for Points Transfer to another user
 
 
 
