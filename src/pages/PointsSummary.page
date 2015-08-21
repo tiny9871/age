@@ -68,6 +68,13 @@
         <apex:commandLink action="{!userDetailLink}" value="Manage Direct Deposit Setting"/>
       </apex:pageBlockSectionItem>
       
+      <apex:pageBlockSectionItem rendered="{!transferToSelection == 'anotherUser'}">
+        <apex:outputLabel value="Another User"/>
+        <apex:inputField value="{!pointsBucket.Owner__c}"/>
+      </apex:pageBlockSectionItem>
+      
+      <apex:pageBlockSectionItem rendered="{!transferToSelection == 'anotherUser'}"/>
+      
       <apex:pageBlockSectionItem rendered="{!showNewPointsBucketName}">
         <apex:outputLabel value="Name" ></apex:outputLabel>
         <apex:outputText value="{!newPointsBucketName}"/>
