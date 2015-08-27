@@ -10,6 +10,8 @@ public class BadgesController extends AgeUserController{
 // 9/26/13     Kym Le     Original
 // 9/30/2013   Guna Sevugapperumal  added 2 methods to BatchHolder inner
 //                                  class for covering unit test
+// 8/28/2015   Tiny       Commented line#113 and updated line#114 condition 
+//                        for solving negative test method's failure
 //
 
   public String selectedEmployee {get; set;}
@@ -109,8 +111,9 @@ public class BadgesController extends AgeUserController{
                                     ORDER By CreatedDate Desc)
                             FROM   Badge__c
                             WHERE Badge__c.Id = :selectedBadgeId];
-    Badge__c badge = badges.get(0);
-    if (!badge.Multi_Award__c && !badge.Awarded_Badges__r.isEmpty()) {
+
+    //Badge__c badge = badges.get(0); //Commented, in test method badge Id is null
+    if (badges.isEmpty() || (!badges.get(0).Multi_Award__c && !badges.get(0).Awarded_Badges__r.isEmpty())) {
       SaveResult sr = new SaveResult();
       sr.success = false;
       sr.message= 'FAIL! Badge cannot be earned more than once';
