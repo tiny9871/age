@@ -146,24 +146,33 @@ private class BadgesControllerTest {
         // Create test points records                                               
         AGETestUtility.createPoints(challenges);
         
-        
-        
         List<BadgesController.BadgeHolder> badgeHolders = 
                                         BadgesController.getAllBadges(uEmp.Id);
                                         
         system.AssertEquals(badges.size() + badgeHoldersBeforeTest.size(), badgeHolders.size());
         
         //  Test awarded badges, but check inserting awarded badge fails
-        // by not providing badgeId and leaving the SelectedDate empty.
+        // with existing awarded badge and Multi_Award__c = false
         String selectedUserId = UserInfo.getUserId();
-        String selectedBadgeId = null; 
+        Badge__c badge = [SELECT id, Multi_Award__c FROM Badge__c where active__c = true LIMIT 1];
+        badge.Multi_Award__c = false;
+        update badge;
+        
+        // Create test awarded badge
+        Awarded_Badge__c ab = new Awarded_Badge__c();
+        
+        ab.User__c = selectedUserId;
+        ab.Badge__c = badge.Id;
+        ab.Effective_Date__c = Date.Today();
+        insert ab;
+        
         String selectedDate = '';
         Boolean awardedBadgeSaved = false;
         
         BadgesController.SaveResult saveResult = 
                                            BadgesController.saveAwardedBadge(
                                            selectedUserId, 
-                                           selectedBadgeId, 
+                                           badge.Id, 
                                            selectedDate);
        // since the badge id is not provided the save award should fail
         // the save result should be false
