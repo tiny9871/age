@@ -9,7 +9,7 @@ public class PointsSummaryController {
 // 2013-10-18     Glenn Weinstein     Add Badge Summary
 // 2013-10-24     Glenn Weinstein     Add "Entered in Company Store" field on Points
 // 2014-07-20     Kym Le                  Added changes for transferring points
-// 2015-08-31     Tiny                Bucket Transfer Enhancements
+// 2015-09-01     Tiny                Bucket Transfer Enhancements
 
 
 
@@ -118,8 +118,8 @@ public class PointsSummaryController {
                                                   Title__c,
                                                   Current_Balance__c
                                            FROM   Points_Bucket__c
-                                           WHERE  Owner__c = :proxyPoints.User__c
-                                           AND    CreatedById = :proxyPoints.User__c];
+                                           WHERE  Owner__c = :UserInfo.getUserId()
+                                           AND    CreatedById = :UserInfo.getUserId()];
   
     return pointsBucket;
   }
