@@ -118,8 +118,8 @@ public class PointsSummaryController {
                                                   Title__c,
                                                   Current_Balance__c
                                            FROM   Points_Bucket__c
-                                           WHERE  Owner__c = :proxyPoints.User__c
-                                           AND    CreatedById = :proxyPoints.User__c];
+                                           WHERE  Owner__c = :UserInfo.getUserId()
+                                           AND    CreatedById = :UserInfo.getUserId()];
   
     return pointsBucket;
   }
