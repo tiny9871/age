@@ -167,12 +167,13 @@ private class BadgesControllerTest {
         insert ab;
         
         String selectedDate = '';
+        String selectedBadgeId = badge.Id;
         Boolean awardedBadgeSaved = false;
         
         BadgesController.SaveResult saveResult = 
                                            BadgesController.saveAwardedBadge(
                                            selectedUserId, 
-                                           badge.Id, 
+                                           selectedBadgeId, 
                                            selectedDate);
        // since the badge id is not provided the save award should fail
         // the save result should be false
